@@ -6,11 +6,11 @@ Here strange creatures are watching the kotlin logo. You can drag'n'drop them as
 
 ```run-kotlin-canvas
 package creatures
-
-import jquery.*
+//sampleStart
 import org.w3c.dom.*
-import kotlin.browser.document
-import kotlin.browser.window
+import kotlinx.browser.document
+import kotlinx.browser.window
+import org.w3c.dom.events.MouseEvent
 import kotlin.math.*
 
 
@@ -27,6 +27,7 @@ fun initalizeCanvas(): HTMLCanvasElement {
     val context = canvas.getContext("2d") as CanvasRenderingContext2D
     context.canvas.width  = window.innerWidth.toInt()
     context.canvas.height = window.innerHeight.toInt()
+
     document.body!!.appendChild(canvas)
     return canvas
 }
@@ -85,12 +86,12 @@ class Logo(override var pos: Vector) : Shape() {
             state.changed = true
             return
         }
-        
+
         size = logoImageSize * (state.size.x / logoImageSize.x) * relSize
         state.context.drawImage(getImage("http://try.kotlinlang.org/static/images/kotlin_logo.svg"), 0.0, 0.0,
-                logoImageSize.x, logoImageSize.y,
-                position.x, position.y,
-                size.x, size.y)
+            logoImageSize.x, logoImageSize.y,
+            position.x, position.y,
+            size.x, size.y)
     }
 
     override fun draw(state: CanvasState) {
@@ -217,10 +218,17 @@ class CanvasState(val canvas: HTMLCanvasElement) {
     val interval = 1000 / 30
 
     init {
-        jq(canvas).mousedown {
+//        canvas.onmousedown = { event: MouseEvent ->
+//            println("Hello, world!!!")
+//            println("Hello, world!!!")
+//        }
+
+
+        //jq(canvas).mousedown {
+        canvas.onmousedown = { event: MouseEvent ->
             changed = true
             selection = null
-            val mousePos = mousePos(it)
+            val mousePos = mousePos(event)
             for (shape in shapes) {
                 if (mousePos in shape) {
                     dragOff = mousePos - shape.pos
@@ -231,25 +239,25 @@ class CanvasState(val canvas: HTMLCanvasElement) {
             }
         }
 
-        jq(canvas).mousemove {
+        canvas.onmousemove = { event: MouseEvent ->
             if (selection != null) {
-                selection!!.pos = mousePos(it) - dragOff
+                selection!!.pos = mousePos(event) - dragOff
                 changed = true
             }
         }
-
-        jq(canvas).mouseup {
+        canvas.onmouseup = { event: MouseEvent ->
             if (selection != null) {
                 selection!!.selected = false
             }
             selection = null
             changed = true
+            this
         }
-
-        jq(canvas).dblclick {
-            val newCreature = Creature(mousePos(it), this@CanvasState)
+        canvas.ondblclick = { event: MouseEvent ->
+            val newCreature = Creature(mousePos(event), this@CanvasState)
             addShape(newCreature)
             changed = true
+            this
         }
 
         window.setInterval({
@@ -283,9 +291,9 @@ class CanvasState(val canvas: HTMLCanvasElement) {
 
     fun draw() {
         if (!changed) return
-        
+
         changed = false
-        
+
         clear()
         for (shape in shapes.asReversed()) {
             shape.draw(this)
@@ -342,13 +350,12 @@ class Vector(val x: Double = 0.0, val y: Double = 0.0) {
 }
 
 fun main(args: Array<String>) {
-//sampleStart
     CanvasState(canvas).apply {
         addShape(Kotlin)
         addShape(Creature(size * 0.25, this))
         addShape(Creature(size * 0.75, this))
     }
-//sampleEnd
 }
+//sampleEnd
 ```
 
